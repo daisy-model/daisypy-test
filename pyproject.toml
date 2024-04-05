@@ -18,7 +18,7 @@ classifiers = [
 dependencies = [
     "pandas",
     "pint",
-    "daisypy-io@git+ssh://git@github.com/daisy-model/daisypy-io.git",
+    "daisypy-io@git+https://github.com/daisy-model/daisypy-io",
  ]
 version = "0.0.0"
 readme = "README.md"
