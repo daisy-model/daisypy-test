@@ -1,0 +1,69 @@
+[build-system]
+requires = [
+    "setuptools"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "daisypy-test"
+authors = [
+  { name="Silas Nyboe Ørting", email="silas@di.ku.dk" },
+]
+description = "Test framework for Daisy"
+requires-python = ">=3.11"
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3"
+]
+dependencies = [
+    "pandas",
+    "pint",
+    "daisypy-io"
+ ]
+version = "0.0.0"
+readme = "README.md"
+
+[project.scripts]
+test_daisy = "daisypy.test.test_daisy:main"
+
+[project.urls]
+Homepage = "https://daisy.ku.dk/"
+
+[project.optional-dependencies]
+test =[
+     "pytest",
+]
+lint = [
+     "pylint",
+     "pytest",
+]
+all = [
+    "pytest",
+    "pylint"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["daisypy"]
+namespaces = true
+
+[tool.pylint.messages_control] 
+disable = [
+    'trailing-whitespace',
+    'trailing-newlines',
+ ]
+
+[tool.pytest.ini_options]
+testpaths = [ "daisypy" ]
+addopts = [
+]
+filterwarnings = [
+    "error",
+]
+
+[tool.coverage.run]
+command_line = "-m pytest"
+source = ["."]
+
+[tool.coverage.report]
+show_missing = "true"
