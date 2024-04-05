@@ -18,7 +18,7 @@ classifiers = [
 dependencies = [
     "pandas",
     "pint",
-    "daisypy-io"
+    "daisypy-io@git+ssh://git@github.com/daisy-model/daisypy-io.git",
  ]
 version = "0.0.0"
 readme = "README.md"
@@ -44,7 +44,7 @@ all = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["daisypy"]
+include = ["daisypy.test"]
 namespaces = true
 
 [tool.pylint.messages_control] 
