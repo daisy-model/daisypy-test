@@ -27,7 +27,7 @@ unit_registry = [
     'hour = 60 * minute = h = hr',
     'day = 24 * hour = d',
     'year = 365.25 * day = a = yr = julian_year',
-    'month = year / 12'
+    'month = year / 12',
 
     'hectare = 10000 m^2 = ha',
 ]
