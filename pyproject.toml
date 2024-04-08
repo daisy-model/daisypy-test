@@ -1,6 +1,7 @@
 [build-system]
 requires = [
-    "setuptools"
+    "setuptools>=60",
+    "setuptools-scm>=8.0"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -20,7 +21,8 @@ dependencies = [
     "pint",
     "daisypy-io@git+https://github.com/daisy-model/daisypy-io",
  ]
-version = "0.0.0"
+
+dynamic = ["version"]   
 readme = "README.md"
 
 [project.scripts]
@@ -47,10 +49,16 @@ where = ["."]
 include = ["daisypy.test"]
 namespaces = true
 
-[tool.pylint.messages_control] 
+[tool.setuptools_scm]
+version_file = "daisypy/test/_version.py"
+
+[tool.pylint.messages_control]
 disable = [
     'trailing-whitespace',
     'trailing-newlines',
+ ]
+ ignore = [
+     '_version.py'
  ]
 
 [tool.pytest.ini_options]
