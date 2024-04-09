@@ -50,7 +50,6 @@ def main():
                     errors.append(entry.name)
                 else:
                     match = True
-                    error_file_path = os.path.join(args.out_dir, entry.name)
                     file_type = os.path.splitext(entry.name)[-1]
                     if file_type == '.dlf':
                         match = compare_dlf_files(entry.path, new_file_path,
@@ -61,7 +60,10 @@ def main():
                     if not match:
                         mismatch.append(entry.name)
                         os.makedirs(args.out_dir, exist_ok=True)
+                        error_file_path = os.path.join(args.out_dir, f'error_{entry.name}')
+                        ref_file_path = os.path.join(args.out_dir, f'ref_{entry.name}')
                         shutil.copy(new_file_path, error_file_path)
+                        shutil.copy(entry.path, ref_file_path)
 
     if len(errors) > 0:
         print('== Errors ==', *errors, sep='\n')
