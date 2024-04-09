@@ -94,22 +94,24 @@ def _compare_bodies(b1, b2, units, sml_names, precision, sml_warn_level):
             if len(sml_map) == 0:
                 warnings.warn(f'No SML definitions loaded. Tried {sml_names}')
             for col in diff.columns.levels[0]:
-                delta = (diff[col]['self'] - diff[col]['other']).abs().max()
+                abs_delta = (diff[col]['self'] - diff[col]['other']).abs()
+                max_abs_delta_idx = abs_delta.argmax()
+                delta = abs_delta.iloc[max_abs_delta_idx]
                 try:
                     sml = sml_map[col]
                     delta_u = (delta * dlf_unit_to_pint_unit(units[col], daisy_ureg)).to(sml)
                     if delta_u > sml:
-                        bad_diff.append((col, b1[col], b2[col]))
+                        bad_diff.append((col, b1[col].iloc[max_abs_delta_idx], b2[col].iloc[max_abs_delta_idx]))
                         print(f'ERROR: {delta_u} > {sml} for {col}')
-                        print(diff[col])
+                        print(diff[col].iloc[max_abs_delta_idx])
                     elif delta_u > sml_warn_level * sml:
                         warnings.warn(f'{delta_u} > {sml_warn_level * sml} for {col}')
                 except KeyError:
                     # We dont have an SML
                     if delta > precision:
-                        bad_diff.append((col, b1[col], b2[col]))
+                        bad_diff.append((col, b1[col].iloc[max_abs_delta_idx], b2[col].iloc[max_abs_delta_idx]))
                         print(f'ERROR: {delta} > {precision} for {col}')
-                        print(diff[col])
+                        print(diff[col].iloc[max_abs_delta_idx])
                 except UndefinedUnitError:
                     error = f'ERROR: Unknown unit {units[col]} for {col}'
                     print(error)
