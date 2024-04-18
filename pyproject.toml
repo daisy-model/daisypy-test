@@ -27,6 +27,7 @@ readme = "README.md"
 
 [project.scripts]
 test_daisy = "daisypy.test.test_daisy:main"
+check_daisy = "daisypy.test.check_daisy:main"
 
 [project.urls]
 Homepage = "https://daisy.ku.dk/"
