@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 def compare_dlf_files(path1, path2,
-                      skip_header=frozenset(('VERSION', 'RUN', 'SIMFILE')),
+                      skip_header=frozenset(('VERSION', 'RUN', 'SIMFILE', 'SIM')),
                       precision=1e-8,
                       sml_identity_threshold=0.001):
     '''Compare two dlf files
