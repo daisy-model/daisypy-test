@@ -12,8 +12,12 @@ __all__ = [
     'compare_dlf_files'
 ]
 
+default_header_lines_to_skip = frozenset(
+    ('VERSION', 'RUN', 'SIMFILE', 'SIM', 'dlf-def-location', 'info')
+)
+
 def compare_dlf_files(path1, path2,
-                      skip_header=frozenset(('VERSION', 'RUN', 'SIMFILE', 'SIM')),
+                      skip_header=default_header_lines_to_skip,
                       precision=1e-8,
                       sml_identity_threshold=0.001):
     '''Compare two dlf files
