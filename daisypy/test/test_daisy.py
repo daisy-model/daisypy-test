@@ -9,6 +9,8 @@ import warnings
 
 #pylint: disable=import-error, no-name-in-module
 from daisypy.test.compare_dlf_files import compare_dlf_files
+from daisypy.test.compare_log_files import compare_log_files
+from daisypy.test.compare_gnuplot_files import compare_gnuplot_files
 
 def main():
     # pylint: disable=missing-function-docstring
@@ -29,6 +31,12 @@ def main():
     comparison if absolute difference is less than this value. Only used if no SML is defined''')
     parser.add_argument('--path', type=str, help='Add to path when running daisy', default='.')
     args = parser.parse_args()
+
+    compare_functions = {
+        '.dlf' : compare_dlf_files,
+        '.log' : compare_log_files,
+        '.gnuplot' : compare_gnuplot_files
+    }
 
     if args.no_warnings:
         warnings.showwarning = lambda message, *args: message
@@ -52,31 +60,31 @@ def main():
                     errors.append((entry.name, [f'{new_file_path} does not exist']))
                 else:
                     file_type = os.path.splitext(entry.name)[-1]
-                    if file_type != '.dlf':
+                    if not file_type in compare_functions:
                         warnings.warn(f'Skipping file type {file_type}')
-                    else:
-                        failed = False
-                        err, not_sim, not_id = compare_dlf_files(
-                            entry.path,
-                            new_file_path,
-                            precision=args.default_float_epsilon,
-                            sml_identity_threshold=args.sml_identity_threshold
-                        )
-                        if len(err) > 0:
-                            errors.append((entry.name, err))
-                            failed = True
-                        if len(not_sim) > 0:
-                            not_similar.append((entry.name, not_sim))
-                            failed = True
-                        if len(not_id) > 0:
-                            not_identical.append((entry.name, not_id))
-                            failed = True
-                        if failed:
-                            os.makedirs(args.out_dir, exist_ok=True)
-                            error_file_path = os.path.join(args.out_dir, f'error_{entry.name}')
-                            ref_file_path = os.path.join(args.out_dir, f'ref_{entry.name}')
-                            shutil.copy(new_file_path, error_file_path)
-                            shutil.copy(entry.path, ref_file_path)
+                        continue
+                    failed = False
+                    err, not_sim, not_id = compare_functions[file_type](
+                        entry.path,
+                        new_file_path,
+                        precision=args.default_float_epsilon,
+                        sml_identity_threshold=args.sml_identity_threshold
+                    )
+                    if len(err) > 0:
+                        errors.append((entry.name, err))
+                        failed = True
+                    if len(not_sim) > 0:
+                        not_similar.append((entry.name, not_sim))
+                        failed = True
+                    if len(not_id) > 0:
+                        not_identical.append((entry.name, not_id))
+                        failed = True
+                    if failed:
+                        os.makedirs(args.out_dir, exist_ok=True)
+                        error_file_path = os.path.join(args.out_dir, f'error_{entry.name}')
+                        ref_file_path = os.path.join(args.out_dir, f'ref_{entry.name}')
+                        shutil.copy(new_file_path, error_file_path)
+                        shutil.copy(entry.path, ref_file_path)
     status = 0
     if len(errors) > 0:
         print('== Errors ==')
