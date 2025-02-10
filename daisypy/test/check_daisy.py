@@ -1,11 +1,8 @@
 '''Program for running daisy tests'''
 import argparse
-import os
-import shutil
 import subprocess
 import sys
 import tempfile
-import warnings
 
 def main():
     # pylint: disable=missing-function-docstring
