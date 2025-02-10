@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 '''Compare two dlf files using smallest meaningfull levels'''
 from itertools import zip_longest
 
@@ -14,7 +15,7 @@ DEFAULT_STRIP_TOKENS = None
 def compare_gnuplot_files(path1,
                           path2,
                           skip_lines=default_lines_to_skip,
-                          strip_tokens=DEFAULT_STRIP_TOKENS
+                          strip_tokens=DEFAULT_STRIP_TOKENS,
                           **_):
     '''Compare two gnuplot files
 

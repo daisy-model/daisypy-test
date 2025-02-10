@@ -5,7 +5,7 @@ import sys
 import tempfile
 
 def main():
-    # pylint: disable=missing-function-docstring
+    # pylint: disable=missing-function-docstring, duplicate-code
     parser = argparse.ArgumentParser(
         description='Run daisy programs and check that they dont fail'
     )
