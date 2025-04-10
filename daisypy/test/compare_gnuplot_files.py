@@ -42,7 +42,7 @@ def compare_gnuplot_files(path1,
     not_similar = []
     keep = _drop_lines_starting_with(skip_lines, strip_tokens)
     try:
-        with open(path1, encoding='utf-8') as file1, open(path2, encoding='utf-8') as file2:
+        with open(path1, encoding='locale') as file1, open(path2, encoding='locale') as file2:
             log1 = filter(keep, file1)
             log2 = filter(keep, file2)
             for line1, line2 in zip_longest(log1, log2):
