@@ -40,6 +40,7 @@ def main():
         '.txt' : compare_txt_files,
     }
 
+
     if args.no_warnings:
         warnings.showwarning = lambda message, *args: message
     else:
