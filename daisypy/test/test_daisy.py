@@ -11,6 +11,7 @@ import warnings
 from daisypy.test.compare_dlf_files import compare_dlf_files
 from daisypy.test.compare_log_files import compare_log_files
 from daisypy.test.compare_gnuplot_files import compare_gnuplot_files
+from daisypy.test.compare_txt_files import compare_txt_files
 
 def main():
     # pylint: disable=missing-function-docstring
@@ -35,7 +36,8 @@ def main():
     compare_functions = {
         '.dlf' : compare_dlf_files,
         '.log' : compare_log_files,
-        '.gnuplot' : compare_gnuplot_files
+        '.gnuplot' : compare_gnuplot_files,
+        '.txt' : compare_txt_files,
     }
 
     if args.no_warnings:
