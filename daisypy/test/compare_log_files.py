@@ -20,6 +20,7 @@ default_lines_to_skip = frozenset(
         'Program',
         'Reseting',
         'Storing',
+        'Time',
         'Trying',
         'Using',
     )
@@ -67,7 +68,7 @@ def compare_log_files(path1, path2,
         with open(path1, encoding='locale') as file1, open(path2, encoding='locale') as file2:
             log1 = filter(keep, dropwhile(program_not_ready, file1))
             log2 = filter(keep, dropwhile(program_not_ready, file2))
-            for line1, line2 in zip_longest(log1, log2):
+            for line1, line2 in zip_longest(log1, log2, fillvalue=''):
                 if line1 != line2 and not _compare_equations(line1, line2, precision):
                     not_similar.append(f'{line1} != {line2}')
     except OSError as e:

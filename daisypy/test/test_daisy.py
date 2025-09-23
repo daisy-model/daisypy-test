@@ -13,6 +13,20 @@ from daisypy.test.compare_log_files import compare_log_files
 from daisypy.test.compare_gnuplot_files import compare_gnuplot_files
 from daisypy.test.compare_txt_files import compare_txt_files
 
+# Files where we only want to check that they exist without comparing their contents
+only_check_existence = {
+    'SUCCESS', # Success indicator from spawn
+}
+
+# File types mapping to comparison functions.
+# File types that are not in this map are not compared
+compare_functions = {
+    '.dlf' : compare_dlf_files,
+    '.log' : compare_log_files,
+    '.gnuplot' : compare_gnuplot_files,
+    '.txt' : compare_txt_files,
+}
+
 def main():
     # pylint: disable=missing-function-docstring
     parser = argparse.ArgumentParser(
@@ -33,14 +47,6 @@ def main():
     parser.add_argument('--path', type=str, help='Add to path when running daisy', default='.')
     args = parser.parse_args()
 
-    compare_functions = {
-        '.dlf' : compare_dlf_files,
-        '.log' : compare_log_files,
-        '.gnuplot' : compare_gnuplot_files,
-        '.txt' : compare_txt_files,
-    }
-
-
     if args.no_warnings:
         warnings.showwarning = lambda message, *args: message
     else:
@@ -54,40 +60,8 @@ def main():
         if result.returncode != 0:
             print('ERROR: Daisy execution failed', file=sys.stderr)
             return 1
+        errors, not_similar, not_identical = check_dir(args.reference_dir, None, tmpdir, args, [], [], [])
 
-        errors, not_similar, not_identical = [], [], []
-        for entry in os.scandir(args.reference_dir):
-            if entry.is_file():
-                new_file_path = os.path.join(tmpdir, entry.name)
-                if not os.path.exists(new_file_path):
-                    errors.append((entry.name, [f'{new_file_path} does not exist']))
-                else:
-                    file_type = os.path.splitext(entry.name)[-1]
-                    if not file_type in compare_functions:
-                        warnings.warn(f'Skipping file type {file_type}')
-                        continue
-                    failed = False
-                    err, not_sim, not_id = compare_functions[file_type](
-                        entry.path,
-                        new_file_path,
-                        precision=args.default_float_epsilon,
-                        sml_identity_threshold=args.sml_identity_threshold
-                    )
-                    if len(err) > 0:
-                        errors.append((entry.name, err))
-                        failed = True
-                    if len(not_sim) > 0:
-                        not_similar.append((entry.name, not_sim))
-                        failed = True
-                    if len(not_id) > 0:
-                        not_identical.append((entry.name, not_id))
-                        failed = True
-                    if failed:
-                        os.makedirs(args.out_dir, exist_ok=True)
-                        error_file_path = os.path.join(args.out_dir, f'error_{entry.name}')
-                        ref_file_path = os.path.join(args.out_dir, f'ref_{entry.name}')
-                        shutil.copy(new_file_path, error_file_path)
-                        shutil.copy(entry.path, ref_file_path)
     status = 0
     if len(errors) > 0:
         print('== Errors ==')
@@ -106,6 +80,66 @@ def main():
         for name, not_id in not_identical:
             print(name, *not_id, sep='\n\t', end='\n\n')
     return status
+
+def check_dir(path, rel_path, tmpdir, args, errors, not_similar, not_identical):
+    for entry in os.scandir(path):
+        if entry.is_dir():
+            if rel_path is None:
+                sub_rel_path = entry.name
+            else:
+                sub_rel_path = os.path.join(rel_path, entry.name)
+            errors, not_similar, not_identical = check_dir(entry.path, sub_rel_path, tmpdir, args, errors, not_similar, not_identical)
+        if entry.is_file():
+            errors, not_similar, not_identical = check_file_entry(entry, rel_path, tmpdir, args, errors, not_similar, not_identical)
+    return errors, not_similar, not_identical
+
+
+def check_file_entry(entry, rel_path, tmpdir, args, errors, not_similar, not_identical):
+    if rel_path is None:
+        rel_path = entry.name
+        out_dir = args.out_dir
+    else:
+        out_dir = os.path.join(args.out_dir, rel_path)
+        rel_path = os.path.join(rel_path, entry.name)
+    new_file_path = os.path.join(tmpdir, rel_path)
+    if not os.path.exists(new_file_path):
+        errors.append((rel_path, [f'{new_file_path} does not exist']))
+    else:
+        if entry.name in only_check_existence:
+            return errors, not_similar, not_identical
+        file_type = os.path.splitext(entry.name)[-1]
+        if not file_type in compare_functions:
+            warnings.warn(f'Skipping file type {file_type}')
+            return errors, not_similar, not_identical
+        failed = False
+        try:
+            err, not_sim, not_id = compare_functions[file_type](
+                entry.path,
+                new_file_path,
+                precision=args.default_float_epsilon,
+                sml_identity_threshold=args.sml_identity_threshold
+            )
+        except Exception as e:
+            err = [f'Exception while comparing: {e}']
+            not_sim = []
+            not_id = []
+            failed = True
+        if len(err) > 0:
+            errors.append((rel_path, err))
+            failed = True
+        if len(not_sim) > 0:
+            not_similar.append((rel_path, not_sim))
+            failed = True
+        if len(not_id) > 0:
+            not_identical.append((rel_path, not_id))
+            failed = True
+        if failed:
+            os.makedirs(out_dir, exist_ok=True)
+            error_file_path = os.path.join(out_dir, f'error_{entry.name}')
+            ref_file_path = os.path.join(out_dir, f'ref_{entry.name}')
+            shutil.copy(new_file_path, error_file_path)
+            shutil.copy(entry.path, ref_file_path)
+    return errors, not_similar, not_identical
 
 if __name__ == '__main__':
     sys.exit(main())
