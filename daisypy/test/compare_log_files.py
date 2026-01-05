@@ -34,7 +34,8 @@ DEFAULT_STRIP_TOKENS = ' \t\n*'
 def compare_log_files(path1, path2,
                       skip_lines=default_lines_to_skip,
                       strip_tokens=DEFAULT_STRIP_TOKENS,
-                      precision=1e-8,
+                      abs_tol=1e-8,
+                      rel_tol=1e-2, # This is set low, because we mostly have summary numbers
                       **_):
     '''Compare two Daisy log files
 
@@ -49,8 +50,11 @@ def compare_log_files(path1, path2,
     strip_tokens: str
       Tokens to strip from strings before matching against skip_lines
 
-    precision: float
-      Consider two numbers equal if their absolute difference is less than this value.
+    abs_tol: float
+      Consider two numbers x, y equal if abs(x-y) < abs_tol
+
+    rel_tol: float
+      Consider two numbers x, y equal if max(abs((x-y)/x), abs((x-y)/y)) < rel_tol
 
     Returns
     -------
@@ -65,16 +69,56 @@ def compare_log_files(path1, path2,
     errors = []
     not_identical = []
     not_similar = []
+    diff = []
     keep = _drop_lines_starting_with(skip_lines, strip_tokens)
     try:
         with open(path1, encoding='locale') as file1, open(path2, encoding='locale') as file2:
             log1 = filter(keep, dropwhile(program_not_ready, file1))
             log2 = filter(keep, dropwhile(program_not_ready, file2))
             for line1, line2 in zip_longest(log1, log2, fillvalue=''):
-                if line1 != line2 and not _compare_equations(line1, line2, precision):
-                    not_similar.append(f'{line1} != {line2}')
+                err, not_sim, not_id = _compare_lines(line1, line2, abs_tol, rel_tol)
+                errors += err
+                not_similar += not_sim
+                not_identical += not_id
     except OSError as e:
         errors.append(e)
+    return errors, not_similar, not_identical
+
+def _compare_lines(line1, line2, abs_tol, rel_tol):
+    line1 = line1.strip()
+    line2 = line2.strip()
+    errors = []
+    not_identical = []
+    not_similar = []
+    good = True
+    # If the lines are only - and = we ignore them
+    if line1 != line2 and not all((c in {'-', '='} for c in line1 + line2)):
+        not_identical.append(f'"{line1}" != "{line2}"')
+
+        # Check the numbers
+        num_pattern = re.compile(r'-?[\d]*\.?[\d]+')
+        numbers1 = re.findall(num_pattern, line1)
+        numbers2 = re.findall(num_pattern, line2)
+        if len(numbers1) != len(numbers2):
+            not_similar.append(f'"{line1}" != "{line2}"')
+            good = False
+        else:
+            for n1, n2 in zip(numbers1, numbers2):
+                x, y = float(n1), float(n2)
+                d = x - y
+                if abs(d) > abs_tol and max(abs(d/x), abs(d/y)) > rel_tol:
+                    not_similar.append(f'"{x}" != "{y}"')
+                    good = False
+        if good:
+            # If the numbers are good, check the rest of the string
+            # First get rid of consectuive spaces
+            multi_space_pattern = re.compile("[ ]{2,}")
+            s1 = re.sub(num_pattern, '<number>', line1).strip()
+            s1 = re.sub(multi_space_pattern, " ", s1)
+            s2 = re.sub(num_pattern, '<number>', line2).strip()
+            s2 = re.sub(multi_space_pattern, " ", s2)
+            if s1 != s2:
+                not_similar.append(f'"{s1}" != "{s2}"')
     return errors, not_similar, not_identical
 
 def _drop_lines_starting_with(drop_tokens, strip_tokens):
@@ -82,22 +126,3 @@ def _drop_lines_starting_with(drop_tokens, strip_tokens):
         s = s.strip(strip_tokens)
         return not any((s.startswith(token) for token in drop_tokens))
     return keep
-
-def _compare_equations(line1, line2, precision):
-    equation_pattern = re.compile(
-        r'(?P<var>[\S]+)[\s]+=[\s]+(?P<value>[\S]+)[\s]+(?P<unit>[\S]+)[\s]+(?P<comment>[\S]+)'
-    )
-    eq1 = equation_pattern.match(line1)
-    eq2 = equation_pattern.match(line2)
-    if eq1 is None or eq2 is None:
-        return False
-    if ((eq1.group('var') != eq2.group('var')) or
-        (eq1.group('unit') != eq2.group('unit')) or
-        (eq1.group('comment') != eq2.group('comment'))):
-        return False
-    try:
-        if abs(float(eq1.group('value')) - float(eq2.group('value'))) > precision:
-            return False
-    except TypeError:
-        return False
-    return True

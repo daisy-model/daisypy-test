@@ -1,6 +1,7 @@
 # daisypy-test
 Test framework for daisy log files (.dlf)
 
+    pip install daisypy-test@git+https://github.com/daisy-model/daisypy-test
 
 ## Smallest meaningfull level
 The smallest meaningful level (SML) for a particular value is the smallest scale at which differences are meaningful. For example, the SML for field nitrogen is 1 kg/ha, which means that differences less than 1 kg/ha are ignored.
