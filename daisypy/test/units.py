@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 unit_registry = [
+    'micro- = 1e-6  = u-',
     'milli- = 1e-3  = m-',
     'centi- = 1e-2  = c-',
     'deci- =  1e-1  = d-',
@@ -30,6 +31,8 @@ unit_registry = [
     'month = year / 12',
 
     'hectare = 10000 m^2 = ha',
+
+    'ppm = 1e-6',
 ]
 
 daisy_ureg = pint.UnitRegistry(unit_registry)
@@ -55,5 +58,10 @@ def dlf_unit_to_pint_unit(unit, ureg):
         ' DM/ha' : '/ha',
         ' N/ha' : '/ha',
         ' C/ha' : '/ha',
+        'ppm dry soil' : 'ppm',
     }
-    return ureg(reduce(lambda s, kv: s.replace(kv[0], kv[1]), redefine.items(), unit))
+    # Apply all redefinitions to the unit
+    redefined_unit = reduce(lambda s, kv: s.replace(kv[0], kv[1]), redefine.items(), unit)
+
+    # Convert to pint unit
+    return ureg(redefined_unit)
