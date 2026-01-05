@@ -96,7 +96,7 @@ def _compare_lines(line1, line2, abs_tol, rel_tol):
         not_identical.append(f'"{line1}" != "{line2}"')
 
         # Check the numbers
-        num_pattern = re.compile(r'-?[\d]*\.?[\d]+')
+        num_pattern = re.compile(r'-?\d*\.?\d+(?:[eE][+-]?\d+)?')
         numbers1 = re.findall(num_pattern, line1)
         numbers2 = re.findall(num_pattern, line2)
         if len(numbers1) != len(numbers2):
