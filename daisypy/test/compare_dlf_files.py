@@ -20,7 +20,22 @@ def compare_dlf_files(path1, path2,
                       skip_header=default_header_lines_to_skip,
                       precision=1e-8,
                       sml_identity_threshold=0.001):
-    '''Compare two dlf files
+    '''Compare two dlf files and return a triple of errors, parts that are not "similar" and parts
+    that are not "identical".
+
+    Identity is defined as:
+    Header elements and units are identical if they compare equal using standard python equality
+    Body elements are identical if
+      - they compare equal using pandas.DataFrame.compare semantics (e.g. NaNs are also equal)
+      - their difference is less than sml_identity_threshold * SML specification
+      - no SML is available and their difference is less than sml_identity_threshold * precision
+
+    Similarity is defined as:
+    Header elements and units are similar if they are identical.
+    Body elements are similar if
+      - they are identical or
+      - their difference falls within the SML specification
+      - no SML is available and their difference is less than the precision parameter
 
     Parameters
     ----------
@@ -39,10 +54,15 @@ def compare_dlf_files(path1, path2,
 
     Returns
     -------
-    (errors, not_similar, not_identical) 
+    (errors, not_similar, not_identical)
       errors: list of str
       not_similar: list of str
       not_identical: list of str
+
+    Notes
+    -----
+    Units are only compared if headers are similar.
+    Bodies are only compared if units are similar.
     '''
     dlf1 = read_dlf(path1)
     dlf2 = read_dlf(path2)
@@ -55,7 +75,7 @@ def compare_dlf_files(path1, path2,
     if len(diff_units) > 0:
         return [], diff_units, []
 
-    
+
     return _compare_bodies(dlf1.body,
                            dlf2.body,
                            dlf1.units,
@@ -93,6 +113,7 @@ def _compare_bodies(b1, b2, units, header, precision, sml_identity_threshold):
     try:
         diff = b1.compare(b2)
         if len(diff) > 0:
+            # Not identical according to pandas.Dataframe.compare
             sml_map = load_smallest_meaningful_level(header, daisy_ureg)
             if len(sml_map) == 0:
                 warnings.warn('No SML definitions loaded.')
@@ -101,7 +122,15 @@ def _compare_bodies(b1, b2, units, header, precision, sml_identity_threshold):
                 max_abs_delta_idx = abs_delta.argmax()
                 delta = abs_delta.iloc[max_abs_delta_idx]
                 try:
-                    sml = sml_map[col]
+                    try:
+                        sml = sml_map[col]
+                    except KeyError:
+                        # Check if we have depth logged values, e.g. M @ -100
+                        parts = col.split("@", maxsplit=1)
+                        if len(parts) == 2:
+                            sml = sml_map[parts[0] + "@"]
+                        else:
+                            raise
                     delta_u = (delta * dlf_unit_to_pint_unit(units[col], daisy_ureg)).to(sml)
                     if delta_u > sml_identity_threshold * sml:
                         row = diff[col].iloc[max_abs_delta_idx]
