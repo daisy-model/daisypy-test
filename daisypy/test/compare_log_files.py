@@ -94,14 +94,14 @@ def _compare_lines(line1, line2, abs_tol, rel_tol):
     good = True
     # If the lines are only - and = we ignore them
     if line1 != line2 and not all((c in {'-', '='} for c in line1 + line2)):
-        not_identical.append(f'"{line1}" != "{line2}"')
+        not_identical.append(f'"{line1}" | "{line2}"')
 
         # Check the numbers
         num_pattern = re.compile(r'-?\d*\.?\d+(?:[eE][+-]?\d+)?')
         numbers1 = re.findall(num_pattern, line1)
         numbers2 = re.findall(num_pattern, line2)
         if len(numbers1) != len(numbers2):
-            not_similar.append(f'"{line1}" != "{line2}"')
+            not_similar.append(f'"{line1}" | "{line2}"')
             good = False
         else:
             for n1, n2 in zip(numbers1, numbers2):
@@ -109,7 +109,7 @@ def _compare_lines(line1, line2, abs_tol, rel_tol):
                 d = x - y
                 if abs(d) > abs_tol:
                     if x == 0 or y == 0 or max(abs(d/x), abs(d/y)) > rel_tol:
-                        not_similar.append(f'"{x}" != "{y}"')
+                        not_similar.append(f'"{x}" != "{y}" in\n\t{line1}\n\t{line2}')
                         good = False
         if good:
             # If the numbers are good, check the rest of the string
@@ -124,7 +124,7 @@ def _compare_lines(line1, line2, abs_tol, rel_tol):
             s2 = re.sub(multi_space_pattern, " ", s2)
             s2 = re.sub(neg_nan_pattern, "nan", s2)
             if s1 != s2:
-                not_similar.append(f'"{s1}" != "{s2}"')
+                not_similar.append(f'"{s1}" | "{s2}"')
     return errors, not_similar, not_identical
 
 def _drop_lines_starting_with(drop_tokens, strip_tokens):
