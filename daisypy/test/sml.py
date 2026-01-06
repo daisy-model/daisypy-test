@@ -41,6 +41,8 @@ sml_paths = {
     'Field chemical N' : 'sml-definitions/field_chemicals_N.toml',
     'Soil chemical N' : 'sml-definitions/soil_chemicals_N.toml',
 
+    'Field chemical colloid' : 'sml-definitions/field_chemicals_colloid.toml',
+
     'Field nitrogen' : 'sml-definitions/field_nitrogen.toml',
     'Soil nitrogen' : 'sml-definitions/soil_nitrogen.toml',
 
@@ -76,6 +78,6 @@ def load_smallest_meaningful_level(header, ureg):
             for k, v in sml.items():
                 sml[k] = ureg(v)
             return sml
-        except (KeyError, pint.UndefinedUnitError):
-            pass
+        except (KeyError, pint.UndefinedUnitError) as e:
+            print(e)
     return {}

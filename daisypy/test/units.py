@@ -33,6 +33,13 @@ unit_registry = [
     'hectare = 10000 m^2 = ha',
 
     'ppm = 1e-6',
+
+    '[velocity] = [length] / [time]',
+    '[acceleration] = [velocity] / [time]',
+    '[force] = [mass] * [acceleration]',
+    '[energy] = [force] * [length]',
+    'newton = kilogram * meter / second ** 2 = N',
+    'joule = newton * meter = J',
 ]
 
 daisy_ureg = pint.UnitRegistry(unit_registry)
@@ -50,7 +57,7 @@ def dlf_unit_to_pint_unit(unit, ureg):
     Returns
     -------
     pint.Quantity
-    
+
     '''
     if unit in {'', 'DS'}:
         return ureg('dimensionless')
