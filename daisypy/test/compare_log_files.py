@@ -1,4 +1,5 @@
 '''Compare two log files using smallest meaningfull levels'''
+import math
 import re
 from itertools import zip_longest, dropwhile
 
@@ -106,17 +107,22 @@ def _compare_lines(line1, line2, abs_tol, rel_tol):
             for n1, n2 in zip(numbers1, numbers2):
                 x, y = float(n1), float(n2)
                 d = x - y
-                if abs(d) > abs_tol and max(abs(d/x), abs(d/y)) > rel_tol:
-                    not_similar.append(f'"{x}" != "{y}"')
-                    good = False
+                if abs(d) > abs_tol:
+                    if x == 0 or y == 0 or max(abs(d/x), abs(d/y)) > rel_tol:
+                        not_similar.append(f'"{x}" != "{y}"')
+                        good = False
         if good:
             # If the numbers are good, check the rest of the string
-            # First get rid of consectuive spaces
-            multi_space_pattern = re.compile("[ ]{2,}")
-            s1 = re.sub(num_pattern, '<number>', line1).strip()
+            # We remove all the numbers, replace consecutive whitespace with a single space and make
+            # -nan into nan
+            multi_space_pattern = re.compile(r"\s{2,}")
+            neg_nan_pattern = "-nan"
+            s1 = re.sub(num_pattern, '', line1).strip()
             s1 = re.sub(multi_space_pattern, " ", s1)
-            s2 = re.sub(num_pattern, '<number>', line2).strip()
+            s1 = re.sub(neg_nan_pattern, "nan", s1)
+            s2 = re.sub(num_pattern, '', line2).strip()
             s2 = re.sub(multi_space_pattern, " ", s2)
+            s2 = re.sub(neg_nan_pattern, "nan", s2)
             if s1 != s2:
                 not_similar.append(f'"{s1}" != "{s2}"')
     return errors, not_similar, not_identical
